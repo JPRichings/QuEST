@@ -36,51 +36,60 @@ void writeState(const int * const STATE, const size_t NUM_QUBITS) {
 
 int main (void) {
   const unsigned int NUM_QUBITS = 4;
-  
-  printf("Simulating %d-Qubit QFT\n\n", NUM_QUBITS);
 
-  // Initialise QuEST
+  // initialise QuEST
   QuESTEnv quenv = createQuESTEnv();
 
   // create quantum register
   Qureg qureg = createQureg(NUM_QUBITS, quenv);
 
+  if (!quenv.rank)
+    printf("Simulating %d-Qubit QFT\n\n", NUM_QUBITS);
+
   // initialise input register to |0..0>
   initZeroState(qureg);
 
   // report model
-  reportQuregParams(qureg);
-  printf("\n");
-  reportQuESTEnv(quenv);
-  printf("\n");
+  if (!quenv.rank) {
+    reportQuregParams(qureg);
+    printf("\n");
+    reportQuESTEnv(quenv);
+    printf("\n");
+  }
 
   // apply QFT to input register
   qft(qureg, NUM_QUBITS);
 
-  printf("Total number of gates: %d\n", (NUM_QUBITS * (NUM_QUBITS+1))/2 );
+  if (!quenv.rank)
+    printf("Total number of gates: %d\n", (NUM_QUBITS * (NUM_QUBITS+1))/2 );
 
   // results
-  qreal prob;
-  prob = getProbAmp(qureg, 0);
-  printf("Measured probability amplitude of |0..0> state: %g\n", prob);
-  printf("Calculated probability amplitude of |0..0>, C0 = 1 / 2^%d: %g\n",
-    NUM_QUBITS, 1.0 / pow(2,NUM_QUBITS));
+  qreal prob_0 = getProbAmp(qureg, 0);
+  if (!quenv.rank) {
+    printf("Measured probability amplitude of |0..0> state: %g\n", prob_0);
+    printf("Calculated probability amplitude of |0..0>, C0 = 1 / 2^%d: %g\n",
+      NUM_QUBITS, 1.0 / pow(2,NUM_QUBITS));
 
-  printf("Measuring final state: (all probabilities should be 0.5)\n");
-  int outcome;
-  int * state = (int *) malloc(NUM_QUBITS * sizeof(int));
-  for (int n = 0; n < NUM_QUBITS; ++n) {
-    outcome = measureWithStats(qureg, n, &prob);
-    state[n] = outcome;
-    printf("Qubit %d measured in state %d with probability %g\n",
-      n, outcome, prob);
+    printf("Measuring final state: (all probabilities should be 0.5)\n");
   }
-  printf("\n");
-  printf("Final state:\n");
-  writeState(state, NUM_QUBITS);
 
-  // Finalise QuEST
+  int * state = (int *) malloc(NUM_QUBITS * sizeof(int));
+  qreal * probs = (qreal *) malloc(NUM_QUBITS * sizeof(qreal));
+  for (int n = 0; n < NUM_QUBITS; ++n) {
+    state[n] = measureWithStats(qureg, n, probs+n);
+  }
+  if (!quenv.rank) {
+    for (int n = 0; n < NUM_QUBITS; ++n)
+      printf("Qubit %d measured in state %d with probability %g\n",
+        n, state[n], probs[n]);
+    printf("\n");
+    printf("Final state:\n");
+    writeState(state, NUM_QUBITS);
+  }
+
+  // free resources
   free(state);
+  free(probs);
   destroyQureg(qureg, quenv);
   destroyQuESTEnv(quenv);
   
