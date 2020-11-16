@@ -3,36 +3,10 @@
 #include <math.h>
 #include "QuEST.h"
 
-double calcPhaseShift(const int M) {
-  return  ( M_PI / pow(2, (M-1)) );
-}
-
-void qftQubit(Qureg qureg, const int NUM_QUBITS, const int QUBIT_ID) {
-  int control_id = 0;
-  double angle = 0.0;
-  
-  hadamard(qureg, QUBIT_ID);
-  int m = 2;
-  for (int control = QUBIT_ID+1; control < NUM_QUBITS; ++control) {
-    angle = calcPhaseShift(m++);
-    controlledPhaseShift(qureg, control, QUBIT_ID, angle);
-  }
-
-  return;
-}
-
-void qft(Qureg qureg, const int NUM_QUBITS) {
-  for (int qid = 0; qid < NUM_QUBITS; ++qid) 
-    qftQubit(qureg, NUM_QUBITS, qid);
-  return;
-}
-
-void writeState(const int * const STATE, const size_t NUM_QUBITS) {
-  printf("|");
-  for (size_t n = 0; n < NUM_QUBITS; ++n) printf("%d", STATE[n]);
-  printf(">\n");
-  return;
-}
+double calcPhaseShif(const int);
+void qftQubit(Qureg, const int, const int);
+void qft(Qureg, const int);
+void writeState(const int * const, const size_t);
 
 int main (void) {
   const unsigned int NUM_QUBITS = 4;
@@ -94,4 +68,35 @@ int main (void) {
   destroyQuESTEnv(quenv);
   
   return 0;
+}
+
+double calcPhaseShift(const int M) {
+  return  ( M_PI / pow(2, (M-1)) );
+}
+
+void qftQubit(Qureg qureg, const int NUM_QUBITS, const int QUBIT_ID) {
+  int control_id = 0;
+  double angle = 0.0;
+  
+  hadamard(qureg, QUBIT_ID);
+  int m = 2;
+  for (int control = QUBIT_ID+1; control < NUM_QUBITS; ++control) {
+    angle = calcPhaseShift(m++);
+    controlledPhaseShift(qureg, control, QUBIT_ID, angle);
+  }
+
+  return;
+}
+
+void qft(Qureg qureg, const int NUM_QUBITS) {
+  for (int qid = 0; qid < NUM_QUBITS; ++qid) 
+    qftQubit(qureg, NUM_QUBITS, qid);
+  return;
+}
+
+void writeState(const int * const STATE, const size_t NUM_QUBITS) {
+  printf("|");
+  for (size_t n = 0; n < NUM_QUBITS; ++n) printf("%d", STATE[n]);
+  printf(">\n");
+  return;
 }
