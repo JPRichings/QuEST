@@ -48,10 +48,18 @@ int main (void) {
   printf("Total number of gates: %d\n", (NUM_QUBITS * (NUM_QUBITS+1))/2 );
 
   // results
-  qreal prob_0 = getProbAmp(qureg, 0);
-  printf("Measured probability amplitude of |0..0> state: %g\n", prob_0);
+  qreal prob;
+  prob = getProbAmp(qureg, 0);
+  printf("Measured probability amplitude of |0..0> state: %g\n", prob);
   printf("Calculated probability amplitude of |0..0>, C0 = 1 / 2^%d: %g\n",
     NUM_QUBITS, 1.0 / pow(2,NUM_QUBITS));
+
+  int outcome;
+  for (int n = 0; n < NUM_QUBITS; ++n) {
+    outcome = measureWithStats(qureg, n, &prob);
+    printf("Qubit %d measured in state %d with probability %g\n",
+      n, outcome, prob);
+  }
 
   // Finalise QuEST
   destroyQureg(qureg, quenv);
