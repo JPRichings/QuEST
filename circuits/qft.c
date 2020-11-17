@@ -1,12 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 #include "QuEST.h"
 
 double calcPhaseShif(const int);
 void qftQubit(Qureg, const int, const int);
 void qft(Qureg, const int);
 void writeState(const int * const, const size_t);
+void getMonoTime(struct timespec *);
+double getElapsedSeconds(const struct timespec * const,
+  const struct timespec * const);
 
 int main (int argc, char *argv[]) 
 {
@@ -25,6 +29,12 @@ int main (int argc, char *argv[])
       return -1;
     }
   }
+
+  struct timespec run_start, run_stop;
+  struct timespec qft_start, qft_stop;
+  double run_time, qft_time;
+
+  getMonoTime(&run_start);
 
   // initialise QuEST
   QuESTEnv quenv = createQuESTEnv();
@@ -46,8 +56,12 @@ int main (int argc, char *argv[])
     printf("\n");
   }
 
+  getMonoTime(&qft_start);
+
   // apply QFT to input register
   qft(qureg, num_qubits);
+
+  getMonoTime(&qft_stop);
 
   if (!quenv.rank)
     printf("Total number of gates: %d\n", (num_qubits * (num_qubits+1))/2 );
@@ -76,10 +90,20 @@ int main (int argc, char *argv[])
     writeState(state, num_qubits);
   }
 
-  // free resources
+  // free resources and stop timer
   free(state);
   free(probs);
   destroyQureg(qureg, quenv);
+
+  getMonoTime(&run_stop);
+
+  qft_time = getElapsedSeconds(&qft_start, &qft_stop);
+  run_time = getElapsedSeconds(&run_start, &run_stop);
+
+  if (!quenv.rank) 
+    printf("QFT run time: %gs\nTotal run time: %gs\n", qft_time, run_time);
+
+  // destroy QuESTEnv late because we need MPI rank
   destroyQuESTEnv(quenv);
   
   return 0;
@@ -114,4 +138,19 @@ void writeState(const int * const STATE, const size_t num_qubits) {
   for (size_t n = 0; n < num_qubits; ++n) printf("%d", STATE[n]);
   printf(">\n");
   return;
+}
+
+void getMonoTime(struct timespec * time) {
+  clock_gettime(CLOCK_MONOTONIC, time);
+  return;
+}
+
+double getElapsedSeconds(const struct timespec * const start,
+const struct timespec * const stop) {
+  const unsigned long BILLION = 1000000000UL;
+  const unsigned long long TOTAL_NS = 
+    BILLION * (stop->tv_sec - start->tv_sec)
+    + (stop->tv_nsec - start->tv_nsec);
+
+  return (double) TOTAL_NS / BILLION;
 }
