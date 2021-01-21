@@ -184,7 +184,7 @@ endif()
 
 # Set c flags for release
 set(CMAKE_C_FLAGS_RELEASE 
-    "-O2"
+    "-O3"
 )
 
 # Set c flags to use in debug mode
@@ -194,24 +194,24 @@ set(CMAKE_C_FLAGS_DEBUG
 
 # TODO standardize
 # set C compiler flags based on compiler type
-if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
-  # using Clang
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} \
-    -mavx -Wall"
-  )
-elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-  # using GCC
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} \
-    -mavx -Wall"
-  )
-elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "Intel")
-  # using Intel
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} \
-    -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag-disable cpu-dispatch"
-  )
-elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
-  # using Visual Studio
-endif()
+#if ("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+#  # using Clang
+#  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} \
+#    -mavx -Wall"
+#  )
+#elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+#  # using GCC
+#  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} \
+#    -mavx -Wall"
+#  )
+#elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "Intel")
+#  # using Intel
+#  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} \
+#    -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag-disable cpu-dispatch"
+#  )
+#elseif ("${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+#  # using Visual Studio
+#endif()
 
 # ----- C++ COMPILER FLAGS --------------------------------------------------
 
@@ -229,7 +229,7 @@ endif()
 
 # Set c++ flags for release
 set(CMAKE_CXX_FLAGS_RELEASE
-    "-O2"
+    "-O3"
 )
 
 # Set c++ flags to use in debug mode
@@ -238,24 +238,24 @@ set(CMAKE_CXX_FLAGS_DEBUG
 )
 
 # set C++ compiler flags based on compiler type
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  # using Clang
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
-    -mavx"
-  )
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-  # using GCC
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
-    -mavx"
-  )
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-  # using Intel
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
-    -xAVX -axCORE-AVX2 -diag-disable -cpu-dispatch"
-  )
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
-  # using Visual Studio
-endif()
+#if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+#  # using Clang
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
+#    -mavx"
+#  )
+#elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+#  # using GCC
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
+#    -mavx"
+#  )
+#elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+#  # using Intel
+#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} \
+#    -xAVX -axCORE-AVX2 -diag-disable -cpu-dispatch"
+#  )
+#elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+#  # using Visual Studio
+#endif()
 
 if (VERBOSE_CMAKE)
     message("-- Compiler flags:")
