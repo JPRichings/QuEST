@@ -54,6 +54,7 @@ if (NOT TESTING)
 
     # Create user executable
     add_executable(${OUTPUT_EXE} ${USER_SOURCE})
+    target_compile_features(${OUTPUT_EXE} PUBLIC c_std_99)
 
     # Link libraries to user executable, including QuEST library
     if (WIN32)
