@@ -12,6 +12,16 @@ message(STATUS "CMake build type: ${CMAKE_BUILD_TYPE}")
 # Project name
 project(QuEST_Project)
 
+## Using KitWare recommended RPATH settings
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+# the RPATH to be used when installing, but only if it's not a system directory
+list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+if("${isSystemDir}" STREQUAL "-1")
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+endif("${isSystemDir}" STREQUAL "-1")
+
 # -----------------------------------------------------------------------------
 # ----- USER OPTIONS ----------------------------------------------------------
 # -----------------------------------------------------------------------------
@@ -53,6 +63,10 @@ if (NOT TESTING)
     else ()
         target_link_libraries(${OUTPUT_EXE} QuEST Eigen3::Eigen m)
     endif()
+
+    install(TARGETS ${OUTPUT_EXE}
+        RUNTIME DESTINATION bins
+    )
 endif()
 
 # -----------------------------------------------------------------------------

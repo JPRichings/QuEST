@@ -340,6 +340,11 @@ target_link_libraries(QuEST PUBLIC ${MPI_C_LIBRARIES})
 
 target_link_libraries(QuEST ${CUDA_LIBRARIES})
 
+# install library and headers
+install(TARGETS QuEST
+  LIBRARY DESTINATION lib
+)
+add_subdirectory(include)
 
 # ----- Coverage testing with GCC or Clang ------------------------------------
 option(QUEST_ENABLE_COVERAGE "Enable coverage reporting for GCC or Clang" FALSE)
