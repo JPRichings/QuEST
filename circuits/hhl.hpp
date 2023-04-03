@@ -6,3 +6,5 @@ Eigen::VectorXd solveClassically(const Eigen::MatrixBase<DerivedA>& A, const Eig
   Eigen::VectorXd x = A.colPivHouseholderQr().solve(b);
   return x;
 }
+
+double amplitudeEncode(const Eigen::VectorXd& VEC, Qureg qureg);
