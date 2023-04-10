@@ -1,6 +1,7 @@
 #include "QuEST.h"
 #include <eigen3/Eigen/Dense>
 #include <iostream>
+#include <vector>
 #include "hhl.hpp"
 
 int main(void) 
@@ -27,17 +28,50 @@ int main(void)
   
   // number of qubits required
   const std::size_t NQUBITS_B = std::ceil(std::log2(cb.size()));
-  const std::size_t NQUBITS_SCRATCH = 8;
+  const std::size_t NQUBITS_CLOCK = 6;
+  const std::size_t NQUBITS_ANCILLA = 1;
+  const std::size_t NQUBITS = NQUBITS_B + NQUBITS_CLOCK + NQUBITS_ANCILLA;
 
-  Qureg qureg_b = createQureg(NQUBITS_B, quenv);
-  Qureg qureg_scratch = createQureg(NQUBITS_SCRATCH, quenv);
+  // location of qubit registers
+  const std::size_t B_START = 0;
+  const std::size_t CLOCK_START = NQUBITS_B;
+  const std::size_t ANCILLA_START = NQUBITS_B + NQUBITS_CLOCK;
 
-  const double NORM = amplitudeEncode(cb, qureg_b);
-  initZeroState(qureg_scratch);
-  
+  Qureg qureg = createQureg(NQUBITS, quenv);
 
-  destroyQureg(qureg_b, quenv);
-  destroyQureg(qureg_scratch, quenv);
+  initZeroState(qureg);
+  const double NORM = amplitudeEncode(cb, B_START, qureg);
+
+  // In order to simulate, we have to Eigensolve A
+  // Note that solving this problem is equivalent to inverting A, so we hope 
+  // it is not necessary on real quantum hardware.
+  const EigResult EIGA = eigensolve(cA);
+
+  std::cout << "Eigenvalues of A:\n" << EIGA.eigenvalues().transpose() << std::endl;
+  std::cout << "Eigenvectors of A:\n" << EIGA.eigenvectors() << std::endl;
+
+  // Set up for QPE
+  const double T = 1.0 /  NQUBITS_CLOCK;
+  unsigned int k = 1;
+  std::vector<ComplexMatrixN> U(NQUBITS_CLOCK);
+  for (std::size_t i = 0; i < NQUBITS_CLOCK; ++i) {
+    U.at(i) = createComplexMatrixN(NQUBITS_B);
+    constructEvolutionOperator(EIGA, std::complex<double>(0,k*T), U.at(i));
+    k *= 2;
+  }
+
+  // QPE
+  quantumPhaseEstimation(U, B_START, NQUBITS_B, CLOCK_START, NQUBITS_CLOCK, qureg);
+  // invert eigenvalues
+  //conditionalRotationY();
+  // uncompute
+
+  reportState(qureg);
+
+  destroyQureg(qureg, quenv);
+  destroyComplexMatrixN(U[0]);
+  destroyComplexMatrixN(U[1]);
+  destroyComplexMatrixN(U[2]);
   destroyQuESTEnv(quenv);
 
   return 0;
