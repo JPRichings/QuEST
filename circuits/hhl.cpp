@@ -2,6 +2,7 @@
 #include <eigen3/Eigen/Dense>
 #include <iostream>
 #include <vector>
+#include <numeric>
 #include "hhl.hpp"
 
 int main(void) 
@@ -39,9 +40,6 @@ int main(void)
 
   Qureg qureg = createQureg(NQUBITS, quenv);
 
-  initZeroState(qureg);
-  const double NORM = amplitudeEncode(cb, B_START, qureg);
-
   // In order to simulate, we have to Eigensolve A
   // Note that solving this problem is equivalent to inverting A, so we hope 
   // it is not necessary on real quantum hardware.
@@ -51,7 +49,7 @@ int main(void)
   std::cout << "Eigenvectors of A:\n" << EIGA.eigenvectors() << std::endl;
 
   // Set up for QPE
-  const double T = 1.0 /  NQUBITS_CLOCK;
+  const double T = (2 * M_PI) / (std::pow(2,NQUBITS_CLOCK) * std::abs(EIGA.eigenvalues()(0)));
   unsigned int k = 1;
   std::vector<ComplexMatrixN> U(NQUBITS_CLOCK);
   for (std::size_t i = 0; i < NQUBITS_CLOCK; ++i) {
@@ -59,19 +57,62 @@ int main(void)
     constructEvolutionOperator(EIGA, std::complex<double>(0,k*T), U.at(i));
     k *= 2;
   }
+  
+  // Repeat QPE, C-ROTY until ancilla is measured at 1
+  const std::size_t MAX_ITER = 20;
+  std::size_t iter = 0;
+  int m_ancilla = 0;
+  double p_ancilla; 
+  while(!m_ancilla && iter < MAX_ITER) {
+    initZeroState(qureg);
+    const double NORM = amplitudeEncode(cb, B_START, qureg);
+    // QPE
+    quantumPhaseEstimation(U, B_START, NQUBITS_B, CLOCK_START, NQUBITS_CLOCK, qureg);
+    // invert eigenvalues
+    conditionalRotationY(EIGA, NQUBITS_B, NQUBITS_CLOCK, NQUBITS_ANCILLA, qureg);
 
-  // QPE
-  quantumPhaseEstimation(U, B_START, NQUBITS_B, CLOCK_START, NQUBITS_CLOCK, qureg);
-  // invert eigenvalues
-  //conditionalRotationY();
+    m_ancilla = measureWithStats(qureg, ANCILLA_START, &p_ancilla);
+    std::printf("Ancilla is %d with probability %g.\n", m_ancilla, p_ancilla);
+    std::printf("Norm = %g, iter = %d.\n", calcTotalProb(qureg), iter++);
+  }
+
+  if (!m_ancilla) {
+    std::printf("Reached MAX_ITER, aborting.");
+    for (auto& umat : U) destroyComplexMatrixN(umat);
+    reportState(qureg);
+    destroyQureg(qureg, quenv);
+    destroyQuESTEnv(quenv);
+    return 0;
+  }
+
+  // set up for inverse QPE
+  for (auto& umat : U) destroyComplexMatrixN(umat);
+  U.clear();
+  U.resize(NQUBITS_CLOCK);
+
+  k = 1;
+  for (std::size_t i = 0; i < NQUBITS_CLOCK; ++i) {
+    U.at(i) = createComplexMatrixN(NQUBITS_B);
+    constructEvolutionOperator(EIGA, std::complex<double>(0,-k*T), U.at(i));
+    k *= 2;
+  }
+
   // uncompute
+  inverseQuantumPhaseEstimation(U, B_START, NQUBITS_B, CLOCK_START, NQUBITS_CLOCK, qureg);
 
   reportState(qureg);
 
+  std::vector<double> p_b(std::pow(2, NQUBITS_B));
+  std::vector<int> qubits(NQUBITS_B);
+  std::iota(qubits.begin(), qubits.end(), B_START); 
+  calcProbOfAllOutcomes(p_b.data(), qureg, qubits.data(), NQUBITS_B);
+  std::printf("|b> register probabilities\n");
+  for (std::size_t idx = 0; idx < p_b.size(); ++idx) {
+    std::printf("  |%d> : %g\n", idx, p_b.at(idx));
+  }
+
+  for (auto& umat : U) destroyComplexMatrixN(umat);
   destroyQureg(qureg, quenv);
-  destroyComplexMatrixN(U[0]);
-  destroyComplexMatrixN(U[1]);
-  destroyComplexMatrixN(U[2]);
   destroyQuESTEnv(quenv);
 
   return 0;

@@ -26,7 +26,15 @@ void constructEvolutionOperator(const EigResult& EIGA, const std::complex<double
 void quantumPhaseEstimation(const std::vector<ComplexMatrixN>& U, const std::size_t B_START, 
   const std::size_t NQUBITS_B, const std::size_t CLOCK_START, const std::size_t NQUBITS_CLOCK, Qureg qureg);
 
+void inverseQuantumPhaseEstimation(const std::vector<ComplexMatrixN>& U, const std::size_t B_START, 
+  const std::size_t NQUBITS_B, const std::size_t CLOCK_START, const std::size_t NQUBITS_CLOCK, Qureg qureg);
+
 void inverseQFT(const std::size_t START_QUBIT, const std::size_t NQUBITS, Qureg qureg);
 
 void conditionalRotationY(const EigResult& EIGA, const std::size_t NQUBITS_B, const std::size_t NQUBITS_CLOCK,
   const std::size_t NQUBITS_ANCILLA, Qureg qureg);
+
+Eigen::Matrix2cd updateRy(const std::complex<double> ANGLE);
+
+void eigenToComplexMatrixN(const Eigen::MatrixXcd& E, ComplexMatrixN& U);
+
