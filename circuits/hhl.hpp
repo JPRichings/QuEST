@@ -36,5 +36,5 @@ void conditionalRotationY(const EigResult& EIGA, const std::size_t NQUBITS_B, co
 
 Eigen::Matrix2cd updateRy(const std::complex<double> ANGLE);
 
-void eigenToComplexMatrixN(const Eigen::MatrixXcd& E, ComplexMatrixN& U);
+void eigenToComplexMatrix2(const Eigen::Matrix2cd& E, ComplexMatrix2& U);
 

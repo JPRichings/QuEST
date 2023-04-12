@@ -136,49 +136,33 @@ const std::size_t NQUBITS_ANCILLA, Qureg qureg) {
   const std::size_t NQUBITS = NQUBITS_B + NQUBITS_CLOCK + NQUBITS_ANCILLA;
   const std::size_t DIM = std::pow(2, NQUBITS);
   const std::size_t ANCILLA_ID = NQUBITS - 1;
+ 
   std::complex<double> angle;
-  
   Eigen::Matrix2cd Ry;
-  const Eigen::MatrixXcd IB = Eigen::MatrixXcd::Identity(std::pow(2, NQUBITS_B), std::pow(2, NQUBITS_B));
-  const Eigen::MatrixXcd IC = Eigen::MatrixXcd::Identity(std::pow(2, NQUBITS_CLOCK), std::pow(2, NQUBITS_CLOCK));
-  const Eigen::Matrix2cd IA = Eigen::Matrix2cd::Identity();
-  Eigen::MatrixXcd op = Eigen::MatrixXcd::Zero(DIM, DIM); 
-  Eigen::MatrixXcd m = Eigen::MatrixXcd::Zero(std::pow(2, NQUBITS_CLOCK), std::pow(2, NQUBITS_CLOCK)); 
 
-  ComplexMatrixN U = createComplexMatrixN(NQUBITS);
-  std::vector<int> targs(NQUBITS); 
-  std::iota(targs.begin(), targs.end(), 0);
+  ComplexMatrix2 CM_Ry;
 
-  // set up measurement vectors
-  std::vector<Eigen::VectorXcd> measurements(EIGA.eigenvalues().rows());
-  for (auto& vec : measurements) {
-    vec = Eigen::VectorXcd::Zero(std::pow(2,NQUBITS_CLOCK));
-  }
-  measurements.at(0)(0b010000) = 1; // 1    
-  measurements.at(1)(0b010001) = 1; // -1
-  measurements.at(2)(0b111000) = 1; // 3.5
-  measurements.at(3)(0b111001) = 1; // -3.5
-  measurements.at(4)(0b111110) = 1; // 15.5
-  measurements.at(5)(0b111111) = 1; // -15.5
+  // set up control vectors
+  std::vector<int> ctrl_qubits(NQUBITS_CLOCK);
+  std::iota(ctrl_qubits.begin(), ctrl_qubits.end(), NQUBITS_B);
+  std::vector<std::vector<int>> ctrl_state(EIGA.eigenvalues().rows());
+  ctrl_state.at(0) = {0, 0, 0, 0, 1, 0}; // 1
+  ctrl_state.at(1) = {1, 0, 0, 0, 1, 0}; // -1
+  ctrl_state.at(2) = {0, 0, 0, 1, 1, 1}; // 3.5
+  ctrl_state.at(3) = {1, 0, 0, 1, 1, 1}; // -3.5
+  ctrl_state.at(4) = {0, 1, 1, 1, 1, 1}; // 15.5
+  ctrl_state.at(5) = {1, 1, 1, 1, 1, 1}; // -15.5
 
   for (std::size_t i = 0; i < EIGA.eigenvalues().rows(); ++i) {
     angle = 2.0 * std::asin(
       EIGA.eigenvalues()(0) / EIGA.eigenvalues()(i)
     );
     Ry = updateRy(angle);
-    m = measurements.at(i) * measurements.at(i).transpose();
-    op = Eigen::KroneckerProduct<Eigen::MatrixX2cd, Eigen::MatrixXcd>(
-        Ry, Eigen::KroneckerProduct<Eigen::MatrixXcd, Eigen::MatrixXcd>(m, IB)
-      );
-    op += Eigen::KroneckerProduct<Eigen::MatrixX2cd, Eigen::MatrixXcd>(
-        IA, Eigen::KroneckerProduct<Eigen::MatrixXcd, Eigen::MatrixXcd>(IC-m, IB)
-    );
 
-    eigenToComplexMatrixN(op, U);
-    applyMatrixN(qureg, targs.data(), NQUBITS, U);
+    eigenToComplexMatrix2(Ry, CM_Ry);
+    multiStateControlledUnitary(qureg, ctrl_qubits.data(), ctrl_state.at(i).data(), NQUBITS_CLOCK, ANCILLA_ID, CM_Ry);
   }
 
-  destroyComplexMatrixN(U);
   return;
 }
 
@@ -192,16 +176,9 @@ Eigen::Matrix2cd updateRy(const std::complex<double> ANGLE) {
   return Ry;
 }
 
-void eigenToComplexMatrixN(const Eigen::MatrixXcd& E, ComplexMatrixN& U) {
-  const std::size_t DIM = std::pow(2, U.numQubits);
-
-  if (DIM != E.rows() || DIM != E.cols()) {
-    std::cerr << "ComplexMatrixN and Eigen Matrix are not the same size!" << std::endl;
-    return;
-  }
-
-  for (std::size_t row = 0; row < DIM; ++row) {
-    for (std::size_t col = 0; col < DIM; ++col) {
+void eigenToComplexMatrix2(const Eigen::Matrix2cd& E, ComplexMatrix2& U) {
+  for (std::size_t row = 0; row < 2; ++row) {
+    for (std::size_t col = 0; col < 2; ++col) {
       U.real[row][col] = E(row,col).real();
       U.imag[row][col] = E(row,col).imag();
     } 
