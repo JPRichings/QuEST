@@ -70,10 +70,10 @@ const std::size_t CLOCK_START, const std::size_t NQUBITS_CLOCK, Qureg qureg) {
 
   // apply controlled time evolution gates
   std::iota(targs.begin(), targs.end(), B_START);
-  std::size_t uid = 0;
+  std::size_t uid = U.size() - 1;
   for (int ctrl = CLOCK_START + NQUBITS_CLOCK - 1; ctrl >= CLOCK_START; --ctrl) {
     applyMultiControlledMatrixN(qureg, &ctrl, NCTRLS, targs.data(), NQUBITS_B, U.at(uid));
-    ++uid;
+    --uid;
   }
 
   // inverse QFT on clock qubits
@@ -93,10 +93,10 @@ const std::size_t CLOCK_START, const std::size_t NQUBITS_CLOCK, Qureg qureg) {
   const std::size_t NCTRLS = 1;
   targs.resize(NQUBITS_B);
   std::iota(targs.begin(), targs.end(), B_START);
-  std::size_t uid = NQUBITS_CLOCK - 1;
+  std::size_t uid = 0;
   for (int ctrl = CLOCK_START; ctrl < CLOCK_START + NQUBITS_CLOCK; ++ctrl) {
     applyMultiControlledMatrixN(qureg, &ctrl, NCTRLS, targs.data(), NQUBITS_B, U.at(uid));
-    --uid;
+    ++uid;
   }
 
   // apply Hadamard gate to clock qubits
@@ -114,14 +114,14 @@ void inverseQFT(const std::size_t START_QUBIT, const std::size_t NQUBITS, Qureg 
   // swaps
   std::size_t qid1; 
   std::size_t qid2;
-  for (qid1 = START_QUBIT + (NQUBITS / 2) - 1, qid2 = START_QUBIT + (NQUBITS / 2) + 1; qid1 >= START_QUBIT; --qid1, ++qid2) {
+  for (qid1 = START_QUBIT + (NQUBITS / 2) - 1, qid2 = START_QUBIT + (NQUBITS / 2); qid1 >= START_QUBIT; --qid1, ++qid2) {
     swapGate(qureg, qid1, qid2);
   }
 
   // main iQFT
   for (std::size_t qid = START_QUBIT; qid <= END_QUBIT; ++qid) {
     for (std::size_t ctrl = START_QUBIT; ctrl < qid; ++ctrl) {
-      std::size_t m = ctrl - qid;
+      std::size_t m = qid - ctrl;
       angle = M_PI / std::pow(2, m-1);
       controlledPhaseShift(qureg, ctrl, qid, angle);
     }
@@ -146,11 +146,11 @@ const std::size_t NQUBITS_ANCILLA, Qureg qureg) {
   std::vector<int> ctrl_qubits(NQUBITS_CLOCK);
   std::iota(ctrl_qubits.begin(), ctrl_qubits.end(), NQUBITS_B);
   std::vector<std::vector<int>> ctrl_state(EIGA.eigenvalues().rows());
-  ctrl_state.at(0) = {0, 0, 0, 0, 1, 0}; // 1
-  ctrl_state.at(1) = {1, 0, 0, 0, 1, 0}; // -1
-  ctrl_state.at(2) = {0, 0, 0, 1, 1, 1}; // 3.5
-  ctrl_state.at(3) = {1, 0, 0, 1, 1, 1}; // -3.5
-  ctrl_state.at(4) = {0, 1, 1, 1, 1, 1}; // 15.5
+  ctrl_state.at(0) = {0, 1, 0, 0, 0, 0}; // 1
+  ctrl_state.at(1) = {0, 1, 0, 0, 0, 1}; // -1
+  ctrl_state.at(2) = {1, 1, 1, 0, 0, 0}; // 3.5
+  ctrl_state.at(3) = {1, 1, 1, 0, 0, 1}; // -3.5
+  ctrl_state.at(4) = {1, 1, 1, 1, 1, 0}; // 15.5
   ctrl_state.at(5) = {1, 1, 1, 1, 1, 1}; // -15.5
 
   for (std::size_t i = 0; i < EIGA.eigenvalues().rows(); ++i) {

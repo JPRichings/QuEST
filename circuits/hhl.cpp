@@ -59,7 +59,7 @@ int main(void)
   }
   
   // Repeat QPE, C-ROTY until ancilla is measured at 1
-  const std::size_t MAX_ITER = 20;
+  const std::size_t MAX_ITER = 100;
   std::size_t iter = 0;
   int m_ancilla = 0;
   double p_ancilla; 
@@ -77,7 +77,7 @@ int main(void)
   }
 
   if (!m_ancilla) {
-    std::printf("Reached MAX_ITER, aborting.");
+    std::printf("Reached MAX_ITER, aborting.\n");
     for (auto& umat : U) destroyComplexMatrixN(umat);
     reportState(qureg);
     destroyQureg(qureg, quenv);
