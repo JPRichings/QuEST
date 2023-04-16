@@ -1,8 +1,8 @@
 #include "QuEST.h"
 #include <eigen3/Eigen/Dense>
-#include <eigen3/unsupported/Eigen/KroneckerProduct>
 #include <vector>
 #include <iostream>
+#include <numeric>
 #include <cmath>
 #include <complex>
 #include "hhl.hpp"
